@@ -12,6 +12,7 @@
   "dependencies": {
     "dotenv": "^2.0.0",
     "knex": "^0.12.6",
+    "limdu": "^0.8.0",
     "lodash.concat": "^4.5.0",
     "lodash.includes": "^4.3.0",
     "lodash.map": "^4.6.0",
@@ -19,7 +20,11 @@
     "lodash.some": "^4.6.0",
     "lodash.uniq": "^4.5.0",
     "lodash.uniqby": "^4.7.0",
+    "lodash.zipobject": "^4.1.3",
+    "map": "^1.0.1",
     "moviedb": "^0.2.7",
+    "pull-defer": "^0.2.2",
+    "pull-sort": "^1.0.0",
     "pull-stream": "^3.5.0",
     "sqlite3": "^3.1.8",
     "superagent": "^2.3.0"
