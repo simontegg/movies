@@ -6,6 +6,7 @@ exports.up = function(knex, Promise) {
     table.string('image')
     table.integer('runtime')
     table.integer('year')
+    table.date('release_date')
     table.string('rated')
     table.string('country')
     table.integer('metascore')
