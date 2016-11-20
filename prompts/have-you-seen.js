@@ -1,21 +1,41 @@
 const getRandomUnwatched = require('../lib/get-random-unwatched')
+const seen = require('../lib/seen')
+const whichDidYouPrefer = require('./which-did-you-prefer')
 
 const question = {
   type: 'list',
   choices: ['yes', 'no']
 }
 
-module.exports = function (username, callback) {
-  console.log('haveYouSeen', username)
+module.exports = haveYouSeen
+
+function haveYouSeen ({username}, callback) {
   getRandomUnwatched(username, (err, movies) => {
-    const movie = movies[0]
-    if (err) {
-      callback(err)
+    if (err) callback(err)
+    else prompt.call(this, username, movies[0], callback) 
+  })
+}
+
+function prompt (username, movie, callback) {
+  this.prompt(makeQuestion(movie), (answer) => {
+    const movieId = movie.id
+    if (answer.response === 'yes') {
+      seen({ username, movieId, watched: true }, (err, res) => {
+        whichDidYouPrefer.call(this, { username, movieId }, (err, res) => {
+          this.log(res)
+        })
+      }) 
     } else {
-      question.message = `Have you seen "${movie.title}" - ${movie.year}? -
-      http://www.imdb.com/${movie.imdb_id}`
-      question.name = movie.id
-      callback(null, question)
+      seen({ username, movieId, watched: false }, (err, res) => {
+        haveYouSeen.call(this, {username}, callback)   
+      })
     }
+  })
+}
+
+function makeQuestion (movie) {
+  return Object.assign({}, question, {
+    message: `Have you seen "${movie.title}" (${movie.year})?`,
+    name: 'response'
   })
 }

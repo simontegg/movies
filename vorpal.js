@@ -2,6 +2,8 @@ const dotenv = require('dotenv')
 dotenv.load()
 
 const vorpal = require('vorpal')()
+const toPairs = require('lodash.topairs')
+
 
 // pull-streams
 const pull = require('pull-stream')
@@ -23,6 +25,7 @@ const favouriteMovie = require('./prompts/favourite-movie')
 const haveYouSeen = require('./prompts/have-you-seen')
 
 const db = require('./data')
+const seen = require('./lib/seen')
 
 let currentUser
 
@@ -52,8 +55,6 @@ vorpal
               cb()
             }
           })
-
-
       })
     })
   })
@@ -61,13 +62,8 @@ vorpal
 vorpal
   .command('learn', 'movie-bot learns the movies you like')
   .action(function (args, cb) {
-    haveYouSeen(currentUser, (err, question) => {
-      this.log(question)
-      this.prompt(question, (answer) => {
-        this.log(answer)
-        cb()
-      })
-    })
+    console.log(currentUser, cb)
+    haveYouSeen.call(this, {username: currentUser}, cb)
   })
 
 vorpal
@@ -84,4 +80,7 @@ vorpal
 vorpal
   .delimiter('type "start" to get started: ')
   .show()
-  .parse(process.argv);
+  .parse(process.argv)
+
+
+
