@@ -21,9 +21,7 @@ function prompt (username, movie, callback) {
     const movieId = movie.id
     if (answer.response === 'yes') {
       seen({ username, movieId, watched: true }, (err, res) => {
-        whichDidYouPrefer.call(this, { username, movieId }, (err, res) => {
-          this.log(res)
-        })
+        whichDidYouPrefer.call(this, { username, movieId }, callback)
       }) 
     } else {
       seen({ username, movieId, watched: false }, (err, res) => {
