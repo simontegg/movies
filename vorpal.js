@@ -1,10 +1,7 @@
 const dotenv = require('dotenv')
 dotenv.load()
 
-
-
 const vorpal = require('vorpal')()
-
 
 // pull-streams
 const pull = require('pull-stream')
@@ -20,23 +17,71 @@ const unique = require('pull-stream/throughs/unique')
 // commands 
 const searchMovie = require('./commands/search-movie')
 const confirmMovie = require('./commands/confirm-movie')
-
+const seedFromMovie = require('./commands/seed-from-movie')
+const upsert = require('./lib/upsert')
+const favouriteMovie = require('./prompts/favourite-movie')
+const haveYouSeen = require('./prompts/have-you-seen')
 
 const db = require('./data')
 
+let currentUser
+
+const login = {
+  type: 'input',
+  name: 'username',
+  message: 'Login with a username: '
+} 
 
 vorpal
-  .command('search <title>', 'searches for a movie')
+  .command('start', 'identifies user')
   .action(function (args, cb) {
-    searchMovie(args.title, (err, results) => {
-      this.prompt(confirmMovie(results), (result) => {
-        this.log(result) 
+    this.prompt(login, (answer) => {
+      currentUser = answer.username
+      upsert('users', { username: currentUser }, (err, res) => {
+        this.delimiter('>>')
+        this.log(`Hello ${currentUser}`)
+
+        db('user_movies')
+          .where('username', currentUser)
+          .select()
+          .asCallback((err, rows) => {
+            if (rows.length === 0) {
+              this.log("follow the prompts to seed the database with movies you might like") 
+              favouriteMovie.call(this, currentUser, cb)
+            } else {
+              cb()
+            }
+          })
+
+
+      })
+    })
+  })
+
+vorpal
+  .command('learn', 'movie-bot learns the movies you like')
+  .action(function (args, cb) {
+    haveYouSeen(currentUser, (err, question) => {
+      this.log(question)
+      this.prompt(question, (answer) => {
+        this.log(answer)
         cb()
       })
     })
   })
 
 vorpal
-  .delimiter('movie-bot:')
+  .command('search <title>', 'searches for a movie')
+  .action(function (args, cb) {
+    searchMovie(args.title, (err, results) => {
+      this.prompt(confirmMovie(results), (result) => {
+        this.log('seeding database...', result)
+        seedFromMovie(result.movieId, cb) 
+      })
+    })
+  })
+
+vorpal
+  .delimiter('type "start" to get started: ')
   .show()
   .parse(process.argv);

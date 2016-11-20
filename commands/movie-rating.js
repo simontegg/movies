@@ -2,22 +2,20 @@ const dotenv = require('dotenv')
 dotenv.load()
 const MovieDb = require('moviedb')(process.env.MOVIEDB_KEY)
 const request = require('superagent')
+const moment = require('moment')
 
 // pull-streams
 const pull = require('pull-stream')
-const values = require('pull-stream/sources/values')
 const once = require('pull-stream/sources/once')
-const drain = require('pull-stream/sinks/drain')
-const map = require('pull-stream/throughs/map')
+const onEnd = require('pull-stream/sinks/on-end')
 const asyncMap = require('pull-stream/throughs/async-map')
 const flatten = require('pull-stream/throughs/flatten')
 const filter = require('pull-stream/throughs/filter')
 
-const db = require('./data')
-const filterCastCrew = require('./lib/filter-cast-crew')
+const db = require('../data')
+const filterCastCrew = require('../lib/filter-cast-crew')
 
-
-module.exports = function (movieId) {
+module.exports = function (movieId, callback) {
   pull(
     once(movieId),
     asyncMap((movieId, cb) => {
@@ -31,10 +29,14 @@ module.exports = function (movieId) {
     asyncMap((movieInfo, cb) => request.get(omdbUrl(movieInfo.imdb_id), cb)),
     asyncMap((response, cb) => {
       saveMovie(movieId, response.body, (err, rows) => {
-        saveGenres(movieId, response.body.Genre, cb) 
+        if (err) cb(err)
+        else cb(null, response)
       })
     }),
-    drain((res) => {
+    asyncMap((response, cb) => saveGenres(movieId, response.body.Genre, cb)),
+    onEnd(() => {
+      console.log('movie saved', movieId)
+      callback()
     })
   )
 }
@@ -56,6 +58,7 @@ function saveGenres (id, genreString, callback) {
 }
 
 function saveMovie (id, body, callback) {
+  console.log(body.Title)
   db('movies')
   .where('id', id)
   .select()
@@ -65,7 +68,7 @@ function saveMovie (id, body, callback) {
       .insert(responseToRow(id, body))
       .asCallback(callback)
     } else {
-      callback(null)
+      callback(null, [])
     }
   })
 }
@@ -78,6 +81,7 @@ function responseToRow (id, body) {
     image: body.Poster,
     runtime: parseInt(body.Runtime),
     year: parseInt(body.Year),
+    release_date: moment(body.Released, 'DD MMM YYYY').format('YYYY-MM-DD'),
     rated: body.Rated,
     country: body.Country,
     metascore: parseInt(body.Metascore),
