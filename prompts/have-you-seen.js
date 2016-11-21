@@ -22,7 +22,7 @@ function prompt (username, movie, callback) {
 
     if (answer.response === 'yes') {
       seen({ username, movieId, watched: true }, (err, res) => {
-        whichDidYouPrefer.call(this, { username, movieId }, callback)
+        whichDidYouPrefer.call(this, { username, movieAId: movieId }, callback)
       }) 
     } else {
       seen({ username, movieId, watched: false }, (err, res) => {

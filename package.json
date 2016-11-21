@@ -34,6 +34,7 @@
     "pull-stream": "^3.5.0",
     "sqlite3": "^3.1.8",
     "superagent": "^2.3.0",
-    "vorpal": "^1.11.4"
+    "vorpal": "^1.11.4",
+    "xtend": "^4.0.1"
   }
 }

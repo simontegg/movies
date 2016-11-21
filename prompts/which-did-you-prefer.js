@@ -2,6 +2,7 @@ const db = require('../data')
 const haveYouSeen = require('./have-you-seen')
 const eloMatch = require('../lib/elo-match')
 const seed = require('../lib/seed')
+const extend = require('xtend') 
 
 // pull-streams
 const pull = require('pull-stream')
@@ -29,41 +30,45 @@ module.exports = whichDidYouPrefer
 //  find movie watched:true as movieB
 
 function whichDidYouPrefer (options, callback) {
-  if (options.movieId) {
-    let matchingMovies
-
+  console.log('whichDidYouPrefer', options)
+  if (options.movieAId) {
     getPair(options, (err, movieBId) => {
+      console.log({movieBId })
       if (movieBId) {
-        pull(
-          once(movieBId),
-          asyncMap((movieBId, cb) => {
-            getMovies([options.movieId, movieBId], cb)
-          }),
-          asyncMap((movies, cb) => {
-            matchingMovies = movies 
-            this.prompt(makeQuestion(movies), (answer) => {
-              cb(null, answer)
-            })
-          }),
-          asyncMap((answer, cb) => {
-            const winnerId = answer.winner
-
-            eloMatch(
-              options.username, 
-              winnerId, 
-              getLoserId(matchingMovies, winnerId), 
-              cb
-            )
-          }),
-          drain(() => {
-      //      if (!this.seeding) seed(options.username, winnerId)
-            callback()
-          })
-        )
+        console.log(options, movieBId)
+        promptStream.call(this, extend(options, { movieBId }), callback)
       }
     })
   }
 }
+
+
+function promptStream ({username, movieAId, movieBId}, callback) {
+  this.log(username, movieAId, movieBId)
+  getMovies([movieAId, movieBId], (err, movies) => {
+    pull(
+      once(movies),
+      asyncMap((movies, cb) => {
+        this.prompt(makeQuestion(movies), (answer) => cb(null, answer))
+      }),
+      asyncMap((answer, cb) => {
+        const winnerId = answer.winner
+
+        eloMatch(
+          username, 
+          winnerId, 
+          getLoserId(movies, winnerId), 
+          cb
+        )
+      }),
+      drain(() => {
+      //      if (!this.seeding) seed(options.username, winnerId)
+      callback()
+      })
+    )
+  })
+}
+
 
 function getLoserId (movies, winnerId) {
   return movies.filter((movie) => movie.id !== winnerId)[0].id
