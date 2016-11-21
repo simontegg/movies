@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "^2.0.0",
+    "elo-rank": "^1.0.0",
     "inquirer": "^1.2.3",
     "knex": "^0.12.6",
     "limdu": "^0.8.0",

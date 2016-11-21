@@ -18,6 +18,7 @@ exports.up = function(knex, Promise) {
     table.float('tomato_user_rating')
     table.integer('boxoffice')
     table.string('production')
+    table.boolean('seed')
   })
   
 };

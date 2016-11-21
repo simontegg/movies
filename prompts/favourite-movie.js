@@ -31,11 +31,15 @@ module.exports = function (username, callback) {
       }),
       map((result) => result.movieId),
       map((movieId) => {
+        this.seeding = true
         this.log('seeding database with similar movies...')
         return movieId
       }),
       asyncMap((movieId, cb) => asyncJobs(username, movieId, cb)),
-      onEnd(callback)
+      onEnd(() => {
+        this.seeding = false
+        callback()
+      })
     )
   })
 }

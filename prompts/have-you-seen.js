@@ -19,6 +19,7 @@ function haveYouSeen ({username}, callback) {
 function prompt (username, movie, callback) {
   this.prompt(makeQuestion(movie), (answer) => {
     const movieId = movie.id
+
     if (answer.response === 'yes') {
       seen({ username, movieId, watched: true }, (err, res) => {
         whichDidYouPrefer.call(this, { username, movieId }, callback)

@@ -29,6 +29,7 @@ const seen = require('./lib/seen')
 
 let currentUser
 
+
 const login = {
   type: 'input',
   name: 'username',

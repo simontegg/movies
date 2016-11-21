@@ -280,6 +280,10 @@ ecc-jsbn@~0.1.1:
   dependencies:
     jsbn "~0.1.0"
 
+elo-rank:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/elo-rank/-/elo-rank-1.0.0.tgz#424da60681a64c0e71f2aa462f5b7a1c602e6bb2"
+
 escape-string-regexp@^1.0.2, escape-string-regexp@^1.0.5:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/escape-string-regexp/-/escape-string-regexp-1.0.5.tgz#1b61c0562190a8dff6ae3bb2cf0200ca130b86d4"
