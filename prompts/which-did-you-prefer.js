@@ -30,21 +30,18 @@ module.exports = whichDidYouPrefer
 //  find movie watched:true as movieB
 
 function whichDidYouPrefer (options, callback) {
-  console.log('whichDidYouPrefer', options)
   if (options.movieAId) {
     getPair(options, (err, movieBId) => {
-      console.log({movieBId })
       if (movieBId) {
-        console.log(options, movieBId)
         promptStream.call(this, extend(options, { movieBId }), callback)
       }
     })
   }
 }
 
-
 function promptStream ({username, movieAId, movieBId}, callback) {
-  this.log(username, movieAId, movieBId)
+  let winnerId
+
   getMovies([movieAId, movieBId], (err, movies) => {
     pull(
       once(movies),
@@ -52,7 +49,7 @@ function promptStream ({username, movieAId, movieBId}, callback) {
         this.prompt(makeQuestion(movies), (answer) => cb(null, answer))
       }),
       asyncMap((answer, cb) => {
-        const winnerId = answer.winner
+        winnerId = answer.winner
 
         eloMatch(
           username, 
@@ -61,9 +58,9 @@ function promptStream ({username, movieAId, movieBId}, callback) {
           cb
         )
       }),
-      drain(() => {
-      //      if (!this.seeding) seed(options.username, winnerId)
-      callback()
+      drain((updates) => {
+        if (!this.seeding) seed(username, updates[0])
+        callback()
       })
     )
   })
