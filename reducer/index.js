@@ -23,7 +23,7 @@ function command (state, action) {
 function currentUser (state, action) {
   switch (action.type) {
     case LOGIN:
-      return action.payload.username
+      return action.payload.username,
     case LOGOUT: 
       return null
     default:

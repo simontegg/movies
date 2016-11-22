@@ -1,36 +1,30 @@
+const seed = require('./seed')
 const searchMovie = require('../commands/search-movie')
-const seedFromMovie = require('../commands/seed-from-movie')
 const confirmMovie = require('../commands/confirm-movie')
-const fetchMovieData = require('../commands/movie-rating')
 const { favourite } = require('../questions')
 const db = require('../data')
 
 // pull-streams
 const pull = require('pull-stream')
 const once = require('pull-stream/sources/once')
-const onEnd = require('pull-stream/sinks/on-end')
+const drain = require('pull-stream/sinks/drain')
 const map = require('pull-stream/throughs/map')
 const asyncMap = require('pull-stream/throughs/async-map')
 
-module.exports = function (username, callback) {
-  this.prompt(favourite, (answer) => {
+module.exports = () => (dispatch, getState) => {
+  const { command, username } = getState()
+
+  command.prompt(favourite, (answer) => {
     pull(
       once(answer.query),
       asyncMap(searchMovie),
       asyncMap((results, cb) => {
-        this.prompt(confirmMovie(results), (result) => cb(null, result))
+        command.prompt(confirmMovie(results), (result) => {
+          cb(null, result.movieId)
+        })
       }),
-      map((result) => result.movieId),
-      map((movieId) => {
-        this.seeding = true
-        this.log('seeding database with similar movies...')
-        return movieId
-     }),
       asyncMap((movieId, cb) => asyncJobs(username, movieId, cb)),
-      onEnd(() => {
-        this.seeding = false
-        callback()
-      })
+      drain((movieId) => dispatch(seed(movieId)))
     )
   })
 }
@@ -51,7 +45,7 @@ function asyncJobs (username, movieId, callback) {
     } else {
       doneCount ++
       console.log('done', doneCount)
-      if (doneCount === jobs.length) callback(null, 'done')
+      if (doneCount === jobs.length) callback(null, movieId)
     }
   }
 

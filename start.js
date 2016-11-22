@@ -30,17 +30,17 @@ vorpal
     dispatch(login(args.username, this))
 
     currentUser = args.username
-    upsert('users', { username: currentUser }, (err, res) => {
+    upsert('users', { username: currentuser }, (err, res) => {
       this.delimiter('>>')
-      this.log(`Hello ${currentUser}`)
+      this.log(`hello ${currentuser}`)
 
       db('user_movies')
-      .where('username', currentUser)
+      .where('username', currentuser)
       .select()
-      .asCallback((err, rows) => {
+      .ascallback((err, rows) => {
         if (rows.length === 0) {
           this.log("follow the prompts to seed the database with movies you might like") 
-          favouriteMovie.call(this, currentUser, cb)
+          favouritemovie.call(this, currentuser, cb)
         } else {
           cb()
         }

@@ -1,5 +1,6 @@
-const { createStore, applyMiddleware, compose } = require('redux')
-const { install } = require('redux-loop')
+const { createStore, applyMiddleware } = require('redux')
+const thunk = require('redux-thunk')
+const multi = require('redux-multi')
 const reducer = require('../reducer')
 
 const initState = {
@@ -8,12 +9,8 @@ const initState = {
   command: null
 }
 
-const enhancer = compose(
-  install()
-)
-
 module.exports = createStore(
   reducer,
   initState,
-  enhancer
+  applyMiddleware(thunk, multi)
 )
