@@ -1234,6 +1234,10 @@ redux:
     loose-envify "^1.1.0"
     symbol-observable "^1.0.2"
 
+redux-loop:
+  version "2.2.2"
+  resolved "https://registry.yarnpkg.com/redux-loop/-/redux-loop-2.2.2.tgz#1df804487be0f79daf7eff065ad8301ce255fd4e"
+
 redux-thunk:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/redux-thunk/-/redux-thunk-2.1.0.tgz#c724bfee75dbe352da2e3ba9bc14302badd89a98"

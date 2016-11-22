@@ -2,7 +2,8 @@ const dotenv = require('dotenv')
 dotenv.load()
 
 const vorpal = require('vorpal')()
-const store = require('./store')
+const { getState, subscribe, dispatch } = require('./store')
+const { login } = require('./action-creators')
 
 const toPairs = require('lodash.topairs')
 
@@ -19,9 +20,15 @@ const seen = require('./lib/seen')
 
 let currentUser
 
+subscribe(() => {
+  console.log(getState())
+})
+
 vorpal
   .command('login <username>', 'identifies user')
   .action(function (args, cb) {
+    dispatch(login(args.username, this))
+
     currentUser = args.username
     upsert('users', { username: currentUser }, (err, res) => {
       this.delimiter('>>')

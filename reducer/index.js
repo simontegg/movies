@@ -7,13 +7,23 @@ const {
 
 module.exports = combineReducers({
   currentUser,
-  seeding
+  seeding,
+  command
 })
+
+function command (state, action) {
+  switch (action.type) {
+    case LOGIN:
+      return action.payload.command
+    default:
+      return null
+  } 
+}
 
 function currentUser (state, action) {
   switch (action.type) {
     case LOGIN:
-      return action.payload
+      return action.payload.username
     case LOGOUT: 
       return null
     default:

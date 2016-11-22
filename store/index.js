@@ -1,14 +1,19 @@
-const { createStore, applyMiddleware } = require('redux')
-const thunk = require('redux-thunk').default
+const { createStore, applyMiddleware, compose } = require('redux')
+const { install } = require('redux-loop')
 const reducer = require('../reducer')
 
 const initState = {
   currentUser: null,
-  seeding: false
+  seeding: false,
+  command: null
 }
 
-module.exports = store = createStore(
+const enhancer = compose(
+  install()
+)
+
+module.exports = createStore(
   reducer,
   initState,
-  applyMiddleware(thunk)
+  enhancer
 )
