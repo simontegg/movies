@@ -17,6 +17,7 @@ const unique = require('pull-stream/throughs/unique')
 const db = require('../data')
 const exists = require('../data/exists')
 const insert = require('../data/insert')
+const find = require('../data/find')
 
 // lib
 const filterCrew = require('../lib/filter-crew')
@@ -33,74 +34,102 @@ const includes = require('lodash.includes')
 const some = require('lodash.some')
 
 module.exports = function (movieId, callback) {
-  let currentMovieid
-
-  db('cast_crew')
-    .where('movie_id', movieId)
-    .select()
-    .asCallback((err, rows) => {
-      const personIds = rows.map((row) => row.person_id)
-
-      pull(
-        values(personIds),
-        asyncMap((personId, cb) => {
-          MovieDb.personCombinedCredits({ id: personId }, cb)
-        }),
-        map((res) => {
-          return concat(
-            extractMovieIds(res.cast), 
-            extractMovieIds(res.crew, filterCrew)
-          )
-        }),
-        flatten(),
-        unique(),
-        asyncMap((movieId, cb) => {
-          exists('movies', { id, movieId }, (err, movieExists) => {
-            if (err) {
-              cb(err)
-              return
-            }
-            if (movieExists) cb(null, false)
-            else cb(null, movieId)
-          })
-        }),
-        filter((movieId) => movieId),
-        asyncMap((movieId, cb) => MovieDb.movieCredits({ id: movieId }, cb)),  
-        filter((res) => {
-          return containsCreative(concat(res.cast, res.crew), personIds)
-        }),
-        map((res) => {
-          currentMovieid = movieId
-          movieDetails(currentMovieid, noop)
-          return res
-        }),
-        map((res) => res.cast.concat(res.crew)),
-        flatten(),
-        filter(filterCastCrew),
-        asyncMap((credit, cb) => {
-          exists(
-            'cast_crew', 
-            { id: credit.credit_id }, 
-            (err, creditExists) => {
-              if (err) {
-                cb(err)
-                return
-              }
-              if (creditExists) cb(null, false)
-              else cb(null, credit)
-          })
-        }),
-        filter((credit) => credit),
-        unique((credit) => {
-          const row = mapToCredit(currentMovieid, credit)
-          return `${row.job}-${row.person_id}-${row.movie_id}` 
-        }),
-        asyncMap((credit, cb) => {
-          insert('cast_crew', mapToCredit(currentMovieid, credit), cb)
-        }),
-        onEnd(callback)
-      )
+  console.log({movieId})
+  pull(
+    once(movieId),
+    asyncMap((movieId, cb) => {
+      find('cast_crew', { movie_id: movieId }, cb)
+    }),
+    flatten(),
+    map((row) => row.person_id),
+    unique(),
+    collect((err, personIds) => {
+      console.log({personIds})
+      fetchMoviesByPersonWhitelist(personIds, callback) 
     })
+  )
+}
+
+function fetchMoviesByPersonWhitelist (personIds, callback) {
+  let currentMovieId
+
+  pull(
+    values(personIds),
+    asyncMap((personId, cb) => {
+      MovieDb.personCombinedCredits({ id: personId }, cb)
+    }),
+    map((res) => {
+      console.log('fetchMoviesByPersonWhitelist', {res})
+      return concat(
+        extractMovieIds(res.cast), 
+        extractMovieIds(res.crew, filterCrew)
+      )
+    }),
+    flatten(),
+    unique(),
+    asyncMap((movieId, cb) => {
+      exists('movies', { id: movieId }, (err, movieExists) => {
+        if (err) {
+          cb(err)
+          return
+        }
+        if (movieExists) cb(null, false)
+        else cb(null, movieId)
+      })
+    }),
+    filter((movieId) => movieId),
+    map((m) => {
+      console.log({m})
+        return m
+    }),
+    asyncMap((movieId, cb) => {
+      currentMovieId = movieId 
+      MovieDb.movieCredits({ id: movieId }, cb)
+    }),
+    filter((res) => {
+      return containsCreative(
+        concat(res.cast, res.crew), 
+        personIds
+      )
+    }),
+    map((res) => res.cast.concat(res.crew)),
+    drain((credits) => {
+      movieDetails(currentMovieId, noop)
+      handleCredits(currentMovieId, credits, callback)
+    })
+    //movieCreditsSource(personIds, callback)
+  )
+}
+
+function noop () {}
+
+function handleCredits (movieId, credits, callback) {
+  pull(
+    values(credits),
+    filter(filterCastCrew),
+    asyncMap((credit, cb) => {
+      exists(
+        'cast_crew', 
+        { id: credit.credit_id }, 
+        (err, creditExists) => {
+          if (err) {
+            cb(err)
+            return
+          }
+          if (creditExists) cb(null, false)
+            else cb(null, credit)
+        })
+    }),
+    filter((credit) => credit),
+    unique((credit) => {
+      const row = mapToCredit(movieId, credit)
+      return `${row.job}-${row.person_id}-${row.movie_id}` 
+    }),
+    asyncMap((credit, cb) => {
+      insert('cast_crew', mapToCredit(movieId, credit), cb)
+    }),
+    onEnd(callback)
+  )
 }
 
 function containsCreative (credits, personIds) {
