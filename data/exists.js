@@ -3,7 +3,6 @@ const db = require('./index')
 module.exports = exists
 
 function exists (table, data, callback) {
-  console.log({table, data})
   db(table)
     .where(data)
     .select()

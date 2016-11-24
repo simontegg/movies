@@ -52,17 +52,20 @@ function checkNewUser (username) {
 
 function newUser (username) {
   return (dispatch, getState) => {
-    const { command } = getState()
+    const { command, callback } = getState()
     pull(
       once(username),
       asyncMap((x, cb) => insert('users', { username }, cb)),
       asyncMap((x, cb) => favouriteMovie(command, username, cb)),
       asyncMap((movieId, cb) => {
         dispatch(update('seeding', true)) 
+        command.log('seeding database with related movies')
         seedFromMovie(movieId, cb)
       }),
       onEnd(() => {
         dispatch(update('seeding', false))
+        command.log('finished seeding')
+        callback()
       })
     )
   }

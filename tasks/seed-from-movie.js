@@ -78,10 +78,6 @@ function fetchMoviesByPersonWhitelist (personIds, callback) {
       })
     }),
     filter((movieId) => movieId),
-    map((m) => {
-      console.log({m})
-        return m
-    }),
     asyncMap((movieId, cb) => {
       currentMovieId = movieId 
       MovieDb.movieCredits({ id: movieId }, cb)
@@ -97,7 +93,6 @@ function fetchMoviesByPersonWhitelist (personIds, callback) {
       movieDetails(currentMovieId, noop)
       handleCredits(currentMovieId, credits, callback)
     })
-    //movieCreditsSource(personIds, callback)
   )
 }
 
