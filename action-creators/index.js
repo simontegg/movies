@@ -1,53 +1,76 @@
 
+// action-creators
+const favouriteMovie = require('./favourite-movie')
 
-const {
-  LOGIN } = require('../constants')
+// pull-streams
+const pull = require('pull-stream')
+//const values = require('pull-stream/sources/values')
+const once = require('pull-stream/sources/once')
+//const drain = require('pull-stream/sinks/drain')
+const onEnd = require('pull-stream/sinks/on-end')
+const many = require('pull-many')
+//const collect = require('pull-stream/sinks/collect')
+const map = require('pull-stream/throughs/map')
+const asyncMap = require('pull-stream/throughs/async-map')
+//const flatten = require('pull-stream/throughs/flatten')
+const filter = require('pull-stream/throughs/filter')
+//const unique = require('pull-stream/throughs/unique')
+//const pair = require('pull-pair')
 
+const { UPDATE } = require('../constants')
 
 module.exports = {
   login
-
 }
 
-function login (username, command) {
+function login (command, username, callback) {
   return [
-    loginSetState(username, command),
-    checkUser(username)
-  ]
+    update('command', command),
+    update('username', username),
+    update('callback', callback),
+    checkNewUser(username)
+  ] 
 }
 
-function loginSetState (username, command) {
-  return { 
-    type: LOGIN,
-    payload: { username, command }
+function update (prop, value) {
+  return {
+    type: UPDATE,
+    payload: { prop, value }
   }
 }
 
-
-function checkUser (username) {
+function checkNewUser (username) {
   return (dispatch, getState) => {
-    userMovieCount(username, (err, count) => {
-      if (count === 0) dispatch(favouriteMovie())
-      else dispatch(welcome()) 
-    })
-  }
-  // if noData
-    // log noData
-  //  question favourite
-
-}
-
-function favouriteMovie () {
-  return (dispatch, getState) => {
-    const command = getState().command
-    questions.favouriteMovie({command, username}, (answer) => {
-
+    const { command } = getState()
+    
+    exists({ table: 'users', username }, (err, userExists) => {
+      if (userExists) dispatch(greeting(command, username))
+      else dispatch(newUser(username))
     })
   }
 }
 
-function seed (movieId) {
-
-
+function newUser (username) {
+  return (dispatch, getState) => {
+    const { command } = getState()
+    pull(
+      once(username),
+      asyncMap((x, cb) => insert('users', { username }, cb)),
+      asyncMap((x, cb) => favouriteMovie(command, username, cb)),
+      asyncMap((movieId, cb) => {
+        dispatch(update('seeding', true)) 
+        seedFromMovie(movieId, cb)
+      }),
+      onEnd(() => {
+        dispatch(update('seeding', false))
+      })
+    )
+  }
 }
+
+function handleError (err) {
+  console.log(err)
+}
+
+
 

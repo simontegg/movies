@@ -1,43 +1,17 @@
-const { combineReducers } = require('redux')
-const { 
-  LOGIN, 
-  LOGOUT,
-  START_SEEDING, 
-  FINISHED_SEEDING } = require('../constants')
+const { UPDATE } = require('../constants')
 
-module.exports = combineReducers({
-  currentUser,
-  seeding,
-  command
-})
+module.exports = reducer
 
-function command (state, action) {
+function reducer (state, action) {
   switch (action.type) {
-    case LOGIN:
-      return action.payload.command
+    case UPDATE:
+      return Object.assign(
+        {}, 
+        state, 
+        { [action.payload.prop]: action.payload.value }
+      )
     default:
-      return null
+      return state
   } 
 }
 
-function currentUser (state, action) {
-  switch (action.type) {
-    case LOGIN:
-      return action.payload.username,
-    case LOGOUT: 
-      return null
-    default:
-      return null
-  } 
-}
-
-function seeding (state, action) {
-  switch (action.type) {
-    case START_SEEDING:
-      return true
-    case FINISHED_SEEDING: 
-      return false
-    default:
-      return null
-  } 
-}
