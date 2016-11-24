@@ -27,7 +27,7 @@ module.exports = (command, username, callback) => {
           cb(null, result.movieId)
         })
       }),
-      asyncMap((movieId, cb) => fetchAndSave(username, movieId, cb),
+      asyncMap((movieId, cb) => fetchAndSave(username, movieId, cb)),
       asyncMap(fetchMovieCredits),
       drain((movieId) => callback(null, movieId))
     )

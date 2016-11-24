@@ -1,3 +1,4 @@
+// modules
 const MovieDb = require('moviedb')(process.env.MOVIEDB_KEY)
 const map = require('lodash.map')
 const request = require('superagent')
@@ -10,8 +11,9 @@ const onEnd = require('pull-stream/sinks/on-end')
 const asyncMap = require('pull-stream/throughs/async-map')
 const filter = require('pull-stream/throughs/filter')
 
-const db = require('../data')
+// db
 const exists = require('../data/exists')
+const insert = require('../data/insert')
 
 module.exports = function (movieId, callback) {
   pull(
@@ -32,6 +34,7 @@ module.exports = function (movieId, callback) {
 }
 
 function saveMovieInfo (movieId, responseBody, callback) {
+  console.log({movieId, responseBody})
   let doneCount = 0
   const jobCount = (responseBody.Genre) ? 2 : 1
 
@@ -50,7 +53,7 @@ function saveMovieInfo (movieId, responseBody, callback) {
   if (responseBody.Genre) {
     insert(
       'genres', 
-      genreStringToRows(movieId, responseBody.Genre.split(','))
+      genreStringToRows(movieId, responseBody.Genre.split(',')),
       done
     )
   }

@@ -43,7 +43,7 @@ module.exports = function (movieId, callback) {
         return `${row.job}-${row.person_id}-${row.movie_id}` 
       }),
       asyncMap((credit, cb) => {
-        insert('cast_crew', mapToCredit(credit, movieId), cb) 
+        insert('cast_crew', mapToCredit(movieId, credit), cb) 
       }),
       onEnd(() => callback(null, movieId))
     )
