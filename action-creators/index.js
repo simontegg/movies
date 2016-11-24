@@ -4,6 +4,7 @@ const exists = require('../data/exists')
 
 // tasks
 const favouriteMovie = require('../tasks/favourite-movie')
+const seedFromMovie = require('../tasks/seed-from-movie')
 
 // pull-streams
 const pull = require('pull-stream')

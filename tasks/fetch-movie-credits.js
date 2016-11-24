@@ -13,8 +13,8 @@ const unique = require('pull-stream/throughs/unique')
 
 // db
 const db = require('../data')
-const { exists } = require('../data/exists')
-const { insert } = require('../data/insert')
+const exists = require('../data/exists')
+const insert = require('../data/insert')
 
 // lib
 const filterCastCrew = require('../lib/filter-cast-crew')
@@ -28,11 +28,12 @@ module.exports = function (movieId, callback) {
       filter(filterCastCrew),
       asyncMap((credit, cb) => {
         exists(
-          { table: 'cast_crew', id: credit.credit_id }, 
+          'cast_crew',
+          { id: credit.credit_id }, 
           (err, creditExists) => {
             if (err) cb(err)
-              if (creditExists) cb(null, false)
-                else cb(null, credit)
+            if (creditExists) cb(null, false)
+            else cb(null, credit)
           }
         )
       }),
@@ -42,9 +43,9 @@ module.exports = function (movieId, callback) {
         return `${row.job}-${row.person_id}-${row.movie_id}` 
       }),
       asyncMap((credit, cb) => {
-        insert({ table: 'cast_crew' data: mapToCredit(credit, movieId) }, cb) 
+        insert('cast_crew', mapToCredit(credit, movieId), cb) 
       }),
-      onEnd(() => cb(null, movieId))
+      onEnd(() => callback(null, movieId))
     )
-  }
+  })
 }

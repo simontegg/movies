@@ -1,6 +1,5 @@
-const dotenv = require('dotenv')
-dotenv.load()
 const MovieDb = require('moviedb')(process.env.MOVIEDB_KEY)
+const map = require('lodash.map')
 const request = require('superagent')
 const moment = require('moment')
 
@@ -9,68 +8,62 @@ const pull = require('pull-stream')
 const once = require('pull-stream/sources/once')
 const onEnd = require('pull-stream/sinks/on-end')
 const asyncMap = require('pull-stream/throughs/async-map')
-const flatten = require('pull-stream/throughs/flatten')
 const filter = require('pull-stream/throughs/filter')
 
 const db = require('../data')
-const filterCastCrew = require('../lib/filter-cast-crew')
+const exists = require('../data/exists')
 
 module.exports = function (movieId, callback) {
   pull(
     once(movieId),
     asyncMap((movieId, cb) => {
-      db('movies').where('id', movieId).select().asCallback((err, rows) => {
-        if (rows && rows.length === 0) cb(null, movieId)
-        else cb(null, false)
+      exists('movies', { id: movieId }, (err, movieExists) => {
+        if (err) cb(err)
+        if (movieExists) cb(null, false)
+        else cb(null, movieId)
       })
     }),
     filter((movieId) => movieId),
     asyncMap((movieId, cb) => MovieDb.movieInfo({ id: movieId }, cb)),
     asyncMap((movieInfo, cb) => request.get(omdbUrl(movieInfo.imdb_id), cb)),
-    asyncMap((response, cb) => {
-      saveMovie(movieId, response.body, (err, rows) => {
-        if (err) cb(err)
-        else cb(null, response)
-      })
-    }),
-    asyncMap((response, cb) => saveGenres(movieId, response.body.Genre, cb)),
-    onEnd(() => {
-      console.log('movie saved', movieId)
-      callback()
-    })
+    asyncMap((response, cb) => saveMovieInfo(movieId, response.body, cb)),
+    onEnd(callback)
   )
+}
+
+function saveMovieInfo (movieId, responseBody, callback) {
+  let doneCount = 0
+  const jobCount = (responseBody.Genre) ? 2 : 1
+
+  function done (err) {
+    if (err) {
+      callback(err)
+      return
+    }
+
+    doneCount ++
+    if (doneCount === jobCount) callback(null)
+  }
+
+  insert('movies', responseToRow(movieId, responseBody), done)
+
+  if (responseBody.Genre) {
+    insert(
+      'genres', 
+      genreStringToRows(movieId, responseBody.Genre.split(','))
+      done
+    )
+  }
 }
 
 function omdbUrl (imdbId) {
   return `https://www.omdbapi.com/?i=${imdbId}&tomatoes=true`
 }
 
-function saveGenres (id, genreString, callback) {
-  if (genreString) {
-    db('genres')
-    .insert(genreString.split(',').map((genre) => (
-      { movie_id: id, genre: genre.trim() }
-    )))
-    .asCallback(callback)
-  } else {
-    callback(null) 
-  }
-}
-
-function saveMovie (id, body, callback) {
-  console.log(body.Title)
-  db('movies')
-  .where('id', id)
-  .select()
-  .asCallback((err, rows) => {
-    if (rows.length === 0) {
-      db('movies')
-      .insert(responseToRow(id, body))
-      .asCallback(callback)
-    } else {
-      callback(null, [])
-    }
-  })
+function genreStringToRows (movieId, genres) {
+  return map(genres, (genre) => 
+    ({ movie_id: movieId, genre: genre.trim() })
+  )
 }
 
 function responseToRow (id, body) {

@@ -1,5 +1,12 @@
+// tasks 
+const movieDetails = require('./movie-details')
 const searchMovie = require('./search-movie')
+const fetchMovieCredits = require('./fetch-movie-credits')
+
+// questions
 const { confirmMovie, favourite } = require('../questions')
+
+// db
 const db = require('../data')
 const insert = require('../data/insert')
 
@@ -20,15 +27,27 @@ module.exports = (command, username, callback) => {
           cb(null, result.movieId)
         })
       }),
-      asyncMap((movieId, cb) => {
-        insert(
-          'user_movies', 
-          { username, movie_id: movieId, favourite: true, watched: true },
-          (err, res) => cb(null, movieId)
-        )
-      }),
+      asyncMap((movieId, cb) => fetchAndSave(username, movieId, cb),
       asyncMap(fetchMovieCredits),
       drain((movieId) => callback(null, movieId))
     )
   })
+}
+
+function fetchAndSave (username, movieId, callback) {
+  let doneCount = 0
+
+  function done (err) {
+    if (err) callback(err)
+    doneCount ++
+    if (doneCount === 2) callback(null, movieId)
+  }
+
+  insert(
+    'user_movies', 
+    { username, movie_id: movieId, favourite: true, watched: true },
+    done
+  )
+
+  movieDetails(movieId, done)
 }

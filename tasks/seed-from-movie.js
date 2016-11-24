@@ -13,11 +13,16 @@ const flatten = require('pull-stream/throughs/flatten')
 const filter = require('pull-stream/throughs/filter')
 const unique = require('pull-stream/throughs/unique')
 
+// db
 const db = require('../data')
+
+// lib
 const filterCrew = require('../lib/filter-crew')
 const filterCastCrew = require('../lib/filter-cast-crew')
 const mapToCredit = require('../lib/map-to-credit')
-const fetchMovieData = require('./movie-rating')
+
+// tasks
+const fetchMovieData = require('./fetch-movie-credits')
 
 const reduce = require('lodash.reduce')
 const concat = require('lodash.concat')
