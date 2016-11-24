@@ -1,16 +1,12 @@
-const { createStore, applyMiddleware } = require('redux')
-const thunk = require('redux-thunk')
-const multi = require('redux-multi')
+const { createStore, applyMiddleware, compose } = require('redux')
+const thunk = require('redux-thunk').default
+const multi = require('redux-multi').default
 const reducer = require('../reducer')
 
 const initState = {
-  currentUser: null,
+  username: null,
   seeding: false,
   command: null
 }
 
-module.exports = createStore(
-  reducer,
-  initState,
-  applyMiddleware(thunk, multi)
-)
+module.exports = applyMiddleware(thunk, multi)(createStore)(reducer, initState)

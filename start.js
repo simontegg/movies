@@ -9,16 +9,15 @@ const toPairs = require('lodash.topairs')
 
 
 subscribe(() => {
-  console.log(getState())
+  console.log('STATE: ', getState().username)
 })
 
 vorpal
   .command('login <username>', 'identifies user')
   .action(function (args, cb) {
-    dispatch(login(args.username, this))
+    dispatch(login(this, args.username))
 
   })
-})
 
 vorpal
   .command('learn', 'movie-bot learns the movies you like')

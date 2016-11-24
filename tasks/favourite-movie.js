@@ -1,5 +1,5 @@
 const searchMovie = require('./search-movie')
-const { confirmMovie, favourite } = require('../questions`)
+const { confirmMovie, favourite } = require('../questions')
 const db = require('../data')
 const insert = require('../data/insert')
 

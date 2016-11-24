@@ -1,22 +1,20 @@
+// db
+const insert = require('../data/insert')
+const exists = require('../data/exists')
 
-// action-creators
-const favouriteMovie = require('./favourite-movie')
+// tasks
+const favouriteMovie = require('../tasks/favourite-movie')
 
 // pull-streams
 const pull = require('pull-stream')
-//const values = require('pull-stream/sources/values')
 const once = require('pull-stream/sources/once')
-//const drain = require('pull-stream/sinks/drain')
 const onEnd = require('pull-stream/sinks/on-end')
 const many = require('pull-many')
-//const collect = require('pull-stream/sinks/collect')
 const map = require('pull-stream/throughs/map')
 const asyncMap = require('pull-stream/throughs/async-map')
-//const flatten = require('pull-stream/throughs/flatten')
 const filter = require('pull-stream/throughs/filter')
-//const unique = require('pull-stream/throughs/unique')
-//const pair = require('pull-pair')
 
+// constants
 const { UPDATE } = require('../constants')
 
 module.exports = {
@@ -43,9 +41,10 @@ function checkNewUser (username) {
   return (dispatch, getState) => {
     const { command } = getState()
     
-    exists({ table: 'users', username }, (err, userExists) => {
-      if (userExists) dispatch(greeting(command, username))
-      else dispatch(newUser(username))
+    exists('users', { username }, (err, userExists) => {
+     // if (userExists) dispatch(greeting(command, username))
+     // else dispatch(newUser(username))
+      dispatch(newUser(username))
     })
   }
 }
@@ -71,6 +70,4 @@ function newUser (username) {
 function handleError (err) {
   console.log(err)
 }
-
-
 
