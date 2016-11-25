@@ -44,22 +44,18 @@ module.exports = function (movieId, callback) {
     map((row) => row.person_id),
     unique(),
     collect((err, personIds) => {
-      console.log({personIds})
-      fetchMoviesByPersonWhitelist(personIds, callback) 
+      fetchMoviesFromPeople(personIds, callback) 
     })
   )
 }
 
-function fetchMoviesByPersonWhitelist (personIds, callback) {
-  let currentMovieId
-
+function fetchMoviesFromPeople (personIds, callback) {
   pull(
     values(personIds),
     asyncMap((personId, cb) => {
       MovieDb.personCombinedCredits({ id: personId }, cb)
     }),
     map((res) => {
-      console.log('fetchMoviesByPersonWhitelist', {res})
       return concat(
         extractMovieIds(res.cast), 
         extractMovieIds(res.crew, filterCrew)
@@ -79,24 +75,45 @@ function fetchMoviesByPersonWhitelist (personIds, callback) {
     }),
     filter((movieId) => movieId),
     asyncMap((movieId, cb) => {
-      currentMovieId = movieId 
-      MovieDb.movieCredits({ id: movieId }, cb)
+      MovieDb.movieCredits({ id: movieId }, (err, response) => {
+        if (err) cb(err)
+        else cb(null, { movieId, response })
+      })
     }),
-    filter((res) => {
+    filter((movie) => {
+      const response = movie.response
+
       return containsCreative(
-        concat(res.cast, res.crew), 
+        concat(response.cast, response.crew), 
         personIds
       )
     }),
-    map((res) => res.cast.concat(res.crew)),
-    drain((credits) => {
-      movieDetails(currentMovieId, noop)
-      handleCredits(currentMovieId, credits, callback)
-    })
+    asyncMap((movie, cb) => {
+      const { movieId, response } = movie
+      jobs(movieId, concat(response.cast, response.crew), cb)
+    }),
+    onEnd(callback)
   )
 }
 
 function noop () {}
+
+function jobs (movieId, credits, callback) {
+  let doneCount = 0
+
+  function done (err) {
+    if (err) { 
+      callback(err)
+      return
+    }
+    
+    doneCount ++
+    if (doneCount === 2) callback(null, movieId)
+  }
+
+  movieDetails(movieId, done)
+  handleCredits(movieId, credits, done)
+}
 
 function handleCredits (movieId, credits, callback) {
   pull(

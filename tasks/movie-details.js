@@ -34,7 +34,6 @@ module.exports = function (movieId, callback) {
 }
 
 function saveMovieInfo (movieId, responseBody, callback) {
-  console.log({movieId, callback})
   let doneCount = 0
   const jobCount = (responseBody.Genre) ? 2 : 1
 

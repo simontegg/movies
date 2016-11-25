@@ -3,27 +3,31 @@ dotenv.load()
 
 const vorpal = require('vorpal')()
 const { getState, subscribe, dispatch } = require('./store')
-const { login } = require('./action-creators')
+const { login, haveYouSeen } = require('./action-creators')
 
 const toPairs = require('lodash.topairs')
 
+let messageRef
 
 subscribe(() => {
-  console.log('STATE: ', getState().username)
+  const { message, command } = getState() 
+
+  if (message !== messageRef) {
+    command.log(message)
+    messageRef = message
+  }
 })
 
 vorpal
   .command('login <username>', 'identifies user')
-  .action(function (args, cb) {
-    dispatch(login(this, args.username))
-
+  .action(function (args, done) {
+    dispatch(login(this, args.username, done))
   })
 
 vorpal
   .command('learn', 'movie-bot learns the movies you like')
-  .action(function (args, cb) {
-    console.log(currentUser, cb)
-    haveYouSeen.call(this, {username: currentUser}, cb)
+  .action(function (args, callback) {
+    dispatch(haveYouSeen(callback))
   })
 
 vorpal

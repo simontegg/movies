@@ -1,9 +1,19 @@
 
+const prefer = {
+  type: 'list',
+  name: 'winner',
+  message: 'Which did you prefer?'
+}
 
 const favourite = {
   type: 'input',
   name: 'query',
   message: 'Enter the title of a favourite movie: ',
+}
+
+const seen = {
+  type: 'list',
+  choices: ['yes', 'no']
 }
 
 function confirmMovie (results) {
@@ -20,7 +30,24 @@ function confirmMovie (results) {
   }
 }
 
+function seenMovie (movie) {
+  return Object.assign({}, seen, {
+    message: `Have you seen "${movie.title}" (${movie.year})?`,
+    name: 'response'
+  })
+}
+
+function preferQuestion (movies) {
+  return Object.assign({}, prefer, { choices: movies.map(makeChoice) })
+}
+
+function makeChoice (movie) {
+  return { name: `${movie.title} (${movie.year})`, value: movie.id }
+}
+
 module.exports = {
   favourite,
-  confirmMovie
+  confirmMovie,
+  seenMovie,
+  preferQuestion
 }
