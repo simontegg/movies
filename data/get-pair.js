@@ -1,25 +1,17 @@
 const db = require('./index')
 
-module.exports = function getPair ({username, movieAId}, callback) {
+module.exports = getPair
+
+function getPair ({username, movieAId}, callback) {
+  console.log('getPair', {username, movieAId})
   db('user_movies')
-  .leftJoin('movies_elo', function () {
-    this
-    .on('user_movies.movie_id', '=', 'movies_elo.movie_a')
-    .orOn('user_movies.movie_id', '=', 'movies_elo.movie_b')
-  })
-  .where(function () {
-    if (movieAId) {
-      this
-      .where({ 'user_movies.username': username, watched: true })
-      .andWhereNot('user_movies.movie_id', movieAId)
-    } else {
-      this.where({ 'user_movies.username': username, watched: true })
-    }
-  })
+  .where({ username, watched: true})
+  .andWhereNot('movie_id', movieAId)
   .orderByRaw('RANDOM()')
   .limit(1)
   .select()
   .asCallback((err, rows) => {
+    console.log({rows})
     callback(err, getMovieid(rows))          
   })
 }

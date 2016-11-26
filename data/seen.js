@@ -5,6 +5,9 @@ module.exports = function ({username, movieId, watched}, callback) {
     'user_movies', 
     { username, movie_id: movieId }, 
     { watched }, 
-    callback
+    (err) => {
+      if (err) callback(err)
+      else callback(null, { username, movieId, watched })
+    }
   )
 }

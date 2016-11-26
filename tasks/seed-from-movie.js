@@ -4,7 +4,6 @@ const MovieDb = require('moviedb')(process.env.MOVIEDB_KEY)
 const pull = require('pull-stream')
 const values = require('pull-stream/sources/values')
 const once = require('pull-stream/sources/once')
-const drain = require('pull-stream/sinks/drain')
 const onEnd = require('pull-stream/sinks/on-end')
 const collect = require('pull-stream/sinks/collect')
 const map = require('pull-stream/throughs/map')
@@ -14,10 +13,10 @@ const filter = require('pull-stream/throughs/filter')
 const unique = require('pull-stream/throughs/unique')
 
 // db
-const db = require('../data')
 const exists = require('../data/exists')
 const insert = require('../data/insert')
 const find = require('../data/find')
+const update = require('../data/update')
 
 // lib
 const filterCrew = require('../lib/filter-crew')
@@ -25,7 +24,6 @@ const filterCastCrew = require('../lib/filter-cast-crew')
 const mapToCredit = require('../lib/map-to-credit')
 
 // tasks
-const fetchMovieCredits = require('./fetch-movie-credits')
 const movieDetails = require('./movie-details')
 
 const reduce = require('lodash.reduce')
@@ -33,10 +31,13 @@ const concat = require('lodash.concat')
 const includes = require('lodash.includes')
 const some = require('lodash.some')
 
-module.exports = function (movieId, callback) {
-  console.log({movieId})
+module.exports = function (username, movieId, callback) {
+  
   pull(
     once(movieId),
+    asyncMap((movieId, cb) => {
+      update('movies', { id: movieId }, { seed: true }, cb)
+    }),
     asyncMap((movieId, cb) => {
       find('cast_crew', { movie_id: movieId }, cb)
     }),
@@ -50,6 +51,7 @@ module.exports = function (movieId, callback) {
 }
 
 function fetchMoviesFromPeople (personIds, callback) {
+  console.log('fetchMoviesFromPeople', personIds)
   pull(
     values(personIds),
     asyncMap((personId, cb) => {
@@ -96,8 +98,6 @@ function fetchMoviesFromPeople (personIds, callback) {
   )
 }
 
-function noop () {}
-
 function jobs (movieId, credits, callback) {
   let doneCount = 0
 
@@ -107,7 +107,7 @@ function jobs (movieId, credits, callback) {
       return
     }
     
-    doneCount ++
+    doneCount++
     if (doneCount === 2) callback(null, movieId)
   }
 
@@ -124,13 +124,11 @@ function handleCredits (movieId, credits, callback) {
         'cast_crew', 
         { id: credit.credit_id }, 
         (err, creditExists) => {
-          if (err) {
-            cb(err)
-            return
-          }
+          if (err) cb(err)
           if (creditExists) cb(null, false)
-            else cb(null, credit)
-        })
+          else cb(null, credit)
+        }
+      )
     }),
     filter((credit) => credit),
     unique((credit) => {

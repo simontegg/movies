@@ -10,8 +10,8 @@ const toPairs = require('lodash.topairs')
 let messageRef
 
 subscribe(() => {
-  const { message, command } = getState() 
-
+  const { message, command, seeding } = getState() 
+  console.log({seeding})
   if (message !== messageRef) {
     command.log(message)
     messageRef = message
