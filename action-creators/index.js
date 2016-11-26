@@ -1,7 +1,12 @@
+// modules
+const extend = require('xtend')
+
 // db
 const insert = require('../data/insert')
 const exists = require('../data/exists')
 const getPair = require('../data/get-pair')
+const getMovies = require('../data/get-movies')
+const seen = require('../data/seen')
 
 // tasks
 const favouriteMovie = require('../tasks/favourite-movie')
@@ -9,6 +14,7 @@ const seedFromMovie = require('../tasks/seed-from-movie')
 
 // lib
 const getRandomUnwatched = require('../lib/get-random-unwatched')
+const getLoserId = require('../lib/get-loser-id')
 const eloMatch = require('../lib/elo-match')
 
 // questions
@@ -32,66 +38,93 @@ module.exports = {
   haveYouSeen
 }
 
-function haveYouSeen (callback) {
+function haveYouSeen (username, callback) {
   return (dispatch, getState) => {
+    console.log('haveYouSeen')
     const { command, username } = getState() 
 
     pull(
       once(username),
       asyncMap(getRandomUnwatched),
       asyncMap((movie, cb) => {
+        console.log('prompting', movie.title)
         command.prompt(seenMovie(movie), (answer) => {
           cb(null, { response: answer.response, movieId: movie.id })
         })
       }),
-      map((res) => {
+      asyncMap((res, cb) => {
         const { response, movieId } = res
 
         if (response === 'yes') {
-          return movieId
+          seen({ username, movieId, watched: true }, (err) => {
+            if (err) cb(err)
+            else cb(null, movieId)
+          })
         } else {
-          dispatch(haveYouSeen(command, username, callback))
-          return false
+          seen({ username, movieId, watched: false }, (err) => {
+            if (err) {
+              cb(err)
+            } else {
+              dispatch(haveYouSeen(username, callback))
+              cb(null, false)
+            }
+          })
         }
       }),
       filter((movieId) => movieId),
-      drain((movieId) => dispatch(prefer({ username, movieId }, callback)))
+      map((movieAId) => {
+        dispatch(prefer({ username, movieAId }, callback))
+        return movieAId
+      }),
+      drain(() => {
+        console.log('drain')
+      })
     )
   }
 }
 
-function prefer ({username, movieId}, callback) {
-  return (dispatch) => {
-    const options = { username, movieAId: movieId }
-
+function prefer (options, callback) {
+  return (dispatch, getState) => {
+    const { username, movieAId, movieBId } = options
+    const { command } = getState()
+    
     pull(
       once(options),
       asyncMap((options, cb) => {
-        if (options.movieAid) {
-          cb(null, options)
-        } else {
+        if (!movieAId && !movieBid) {
           getRandomUnwatched(username, (err, movie) => {
-            if (err) {
-              cb(err)
-            } else {
-              dispatch(prefer(username, movie.id, callback))
-              cb(null, false)
-            }
-          }) 
+            cb(null, false)
+            dispatch(prefer(
+                extend(options, { movieAId: movie.id }), 
+                callback
+            ))
+          })
+        } else {
+          console.log('first condition passed')
+          cb(null, options)
         }
       }),
       filter((options) => options),
-      asyncMap(getPair),
-      filter((movieId) => {
-        if (!movieId) // no pair case -> have you seen
-        return movieId
+      asyncMap((options, cb) => {
+        if (movieAId && !movieBId) {
+          getPair(options, (err, movieBId) => {
+            console.log('got pair', extend(options, { movieBId }))
+            cb(null, false)
+            dispatch(prefer(extend(options, { movieBId }), callback))
+          })
+        } else if (movieAId && movieBId) {
+          console.log('second condition')
+          cb(null, options)
+        }
       }),
-      asyncMap((movieBId, cb) => {
-        getMovies([options.movieAId, movieBId], cb)
+      filter((options) => options),
+      asyncMap((options, cb) => {
+        console.log('getting movies')
+        getMovies([movieAId, movieBId], cb)
       }),
       asyncMap((movies, cb) => {
         command.prompt(preferQuestion(movies), (answer) => {
-          cb(null, { movies, winnerId: answer.winner})
+          cb(null, { movies, winnerId: answer.winner })
         })
       }),
       asyncMap((res, cb) => {
@@ -104,8 +137,9 @@ function prefer ({username, movieId}, callback) {
           cb
         )
       }),
-      onEnd(() => {
-        dispatch(haveYouSeen(callback))
+      drain(() => {
+        console.log('matched')
+        //dispatch(haveYouSeen(callback))
         // if isSeeding seed
       })
     )

@@ -27,7 +27,7 @@ vorpal
 vorpal
   .command('learn', 'movie-bot learns the movies you like')
   .action(function (args, callback) {
-    dispatch(haveYouSeen(callback))
+    dispatch(haveYouSeen(getState().username, callback))
   })
 
 vorpal

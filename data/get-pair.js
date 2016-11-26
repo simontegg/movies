@@ -1,6 +1,6 @@
 const db = require('./index')
 
-module.exports = function getPair ({username, movieId}, callback) {
+module.exports = function getPair ({username, movieAId}, callback) {
   db('user_movies')
   .leftJoin('movies_elo', function () {
     this
@@ -8,10 +8,10 @@ module.exports = function getPair ({username, movieId}, callback) {
     .orOn('user_movies.movie_id', '=', 'movies_elo.movie_b')
   })
   .where(function () {
-    if (movieId) {
+    if (movieAId) {
       this
       .where({ 'user_movies.username': username, watched: true })
-      .andWhereNot('user_movies.movie_id', movieId)
+      .andWhereNot('user_movies.movie_id', movieAId)
     } else {
       this.where({ 'user_movies.username': username, watched: true })
     }
