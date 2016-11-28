@@ -3,7 +3,9 @@ dotenv.load()
 
 const vorpal = require('vorpal')()
 const { getState, subscribe, dispatch } = require('./store')
+const Actions = require('./action-creators')
 const { 
+  learn,
   login, 
   haveYouSeen,
   predict } = require('./action-creators')
@@ -13,7 +15,7 @@ const toPairs = require('lodash.topairs')
 let messageRef
 
 subscribe(() => {
-  const { message, command, seeding } = getState() 
+  const { message, command, seeding, shouldContinue } = getState() 
   if (message !== messageRef) {
     command.log(message)
     messageRef = message
@@ -28,9 +30,7 @@ vorpal
 
 vorpal
   .command('learn', 'movie-bot learns the movies you like')
-  .action(function (args, callback) {
-    dispatch(haveYouSeen(getState().username, callback))
-  })
+  .action(function (args, callback) { dispatch(learn()) })
 
 vorpal
   .command('predict', 'movie-bot tries to predict movies that you will like but have not seen')

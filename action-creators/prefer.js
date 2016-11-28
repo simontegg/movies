@@ -16,6 +16,7 @@ const extend = require('xtend')
 // pull-streams
 const pull = require('pull-stream')
 const once = require('pull-stream/sources/once')
+const onEnd = require('pull-stream/sinks/on-end')
 const drain = require('pull-stream/sinks/drain')
 const asyncMap = require('pull-stream/throughs/async-map')
 const filter = require('pull-stream/throughs/filter')
@@ -25,7 +26,7 @@ const { preferQuestion } = require('../questions')
 
 module.exports = prefer
 
-function prefer (options={}, callback) {
+function prefer (options, callback) {
   return (dispatch, getState) => {
     const { movieAId, movieBId } = options
     const { command, username } = getState()
@@ -66,9 +67,7 @@ function prefer (options={}, callback) {
           cb(null, { movies, winnerId: answer.winner })
         })
       }),
-      asyncMap((res, cb) => {
-        const { movies, winnerId } = res
-        
+      asyncMap(({movies, winnerId}, cb) => {
         eloMatch(
           username, 
           winnerId, 
@@ -76,11 +75,7 @@ function prefer (options={}, callback) {
           cb
         )
       }),
-      drain((winnerId) => {
-        const next = require('./random-prompt')()
-        dispatch(next())
-        dispatch(seedCheck(winnerId, noop))
-      })
+      drain((winnerId) => callback(null, winnerId))
     )
   }
 }

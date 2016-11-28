@@ -10,7 +10,6 @@ function getPair ({username, movieAId}, callback) {
   .limit(1)
   .select()
   .asCallback((err, rows) => {
-    console.log({rows})
     callback(err, getMovieid(rows))          
   })
 }

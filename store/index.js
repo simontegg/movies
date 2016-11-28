@@ -6,7 +6,9 @@ const reducer = require('../reducer')
 const initState = {
   username: null,
   seeding: false,
-  command: null
+  command: null,
+  next: null,
+  args: [],
 }
 
 module.exports = applyMiddleware(thunk, multi)(createStore)(reducer, initState)
