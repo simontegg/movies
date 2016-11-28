@@ -256,6 +256,10 @@ deep-extend@~0.4.0:
   version "0.4.1"
   resolved "https://registry.yarnpkg.com/deep-extend/-/deep-extend-0.4.1.tgz#efe4113d08085f4e6f9687759810f807469e2253"
 
+defined:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/defined/-/defined-1.0.0.tgz#c98d9bcef75674188e110969151199e39b1fa693"
+
 delayed-stream@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/delayed-stream/-/delayed-stream-1.0.0.tgz#df3ae199acadfb7d440aaae0b29e2272b24ec619"
@@ -1123,6 +1127,10 @@ pull-many:
   resolved "https://registry.yarnpkg.com/pull-many/-/pull-many-1.0.8.tgz#3dadd9b6d156c545721bda8d0003dd8eaa06293e"
   dependencies:
     pull-stream "^3.4.5"
+
+pull-merge:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/pull-merge/-/pull-merge-1.0.2.tgz#00078f6455200c78f4dc754c88105e27dbdd3445"
 
 pull-pair:
   version "1.1.0"

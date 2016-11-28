@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "defined": "^1.0.0",
     "dotenv": "^2.0.0",
     "elo-rank": "^1.0.0",
     "inquirer": "^1.2.3",
@@ -31,6 +32,7 @@
     "moviedb": "^0.2.7",
     "pull-defer": "^0.2.2",
     "pull-many": "^1.0.8",
+    "pull-merge": "^1.0.2",
     "pull-pair": "^1.1.0",
     "pull-paramap": "^1.2.1",
     "pull-sort": "^1.0.0",

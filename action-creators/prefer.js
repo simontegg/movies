@@ -30,15 +30,12 @@ function prefer (options={}, callback) {
     const { movieAId, movieBId } = options
     const { command, username } = getState()
     options.username = options.username || username  
-    console.log({ movieAId, movieBId })
 
     pull(
       once(options),
       asyncMap((options, cb) => {
         if (!movieAId && !movieBId) {
-          console.log('getRandomWatched')
           getRandomWatched(username, (err, movie) => {
-            console.log({movie})
             if (err) cb(err)
             cb(null, false)
             dispatch(prefer(
@@ -80,9 +77,7 @@ function prefer (options={}, callback) {
         )
       }),
       drain((winnerId) => {
-        console.log('matched')
         const next = require('./random-prompt')()
-        console.log({next})
         dispatch(next())
         dispatch(seedCheck(winnerId, noop))
       })

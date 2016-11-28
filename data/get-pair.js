@@ -3,7 +3,6 @@ const db = require('./index')
 module.exports = getPair
 
 function getPair ({username, movieAId}, callback) {
-  console.log('getPair', {username, movieAId})
   db('user_movies')
   .where({ username, watched: true})
   .andWhereNot('movie_id', movieAId)

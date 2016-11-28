@@ -38,7 +38,8 @@ module.exports = function (username, movieId, callback) {
     asyncMap((movieId, cb) => {
       update('movies', { id: movieId }, { seed: true }, cb)
     }),
-    asyncMap((movieId, cb) => {
+    asyncMap((updatedIds, cb) => {
+      console.log({updatedIds})
       find('cast_crew', { movie_id: movieId }, cb)
     }),
     flatten(),

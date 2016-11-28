@@ -5,6 +5,7 @@ const exists = require('../data/exists')
 // action-creators
 const update = require('./update')
 const haveYouSeen = require('./have-you-seen')
+const predict = require('./predict')
 
 // tasks
 const favouriteMovie = require('../tasks/favourite-movie')
@@ -18,7 +19,8 @@ const asyncMap = require('pull-stream/throughs/async-map')
 
 module.exports = {
   login,
-  haveYouSeen
+  haveYouSeen,
+  predict
 }
 
 function login (command, username, callback) {

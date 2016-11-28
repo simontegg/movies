@@ -3,7 +3,10 @@ dotenv.load()
 
 const vorpal = require('vorpal')()
 const { getState, subscribe, dispatch } = require('./store')
-const { login, haveYouSeen } = require('./action-creators')
+const { 
+  login, 
+  haveYouSeen,
+  predict } = require('./action-creators')
 
 const toPairs = require('lodash.topairs')
 
@@ -11,7 +14,6 @@ let messageRef
 
 subscribe(() => {
   const { message, command, seeding } = getState() 
-  console.log({seeding})
   if (message !== messageRef) {
     command.log(message)
     messageRef = message
@@ -31,18 +33,26 @@ vorpal
   })
 
 vorpal
+  .command('predict', 'movie-bot tries to predict movies that you will like but have not seen')
+  .action(function (args, callback) {
+
+    dispatch(predict())
+
+  })
+
+vorpal
   .command('search <title>', 'searches for a movie')
   .action(function (args, cb) {
     searchMovie(args.title, (err, results) => {
       this.prompt(confirmMovie(results), (result) => {
-        this.log('seeding database...', result)
+        this.log('seeding database...')
         seedFromMovie(result.movieId, cb) 
       })
     })
   })
 
 vorpal
-  .delimiter('type "login [username]" to get started: ')
+  .delimiter('>>')
   .show()
   .parse(process.argv)
 

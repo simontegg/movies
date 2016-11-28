@@ -20,7 +20,6 @@ const seedFromMovie = require('../tasks/seed-from-movie')
 module.exports = function (movieId, callback) {
   return (dispatch, getState) => {
     const { seeding, username, command } = getState()
-    console.log({seeding})
     
     pull(
       once(seeding),
@@ -33,14 +32,12 @@ module.exports = function (movieId, callback) {
       filter(({eloCount}) => eloCount > 10),
       asyncMap(({eloMax}, cb) => {
         getElo(username, movieId, (err, movieElo) => {
-          console.log({eloMax, movieElo})
-          if (movieElo > (eloMax + ELO_INITIAL) / 2) cb(null, true)
+          if (movieElo > ELO_INITIAL) cb(null, true)
           else cb(null, false)
         })
       }),
       filter((shouldSeed) => shouldSeed),
       asyncMap((shouldSeed, cb) => {
-        console.log({shouldSeed})
         dispatch(update('seeding', true))
         command.log('seeding movies')
         seedFromMovie(movieId, cb)
