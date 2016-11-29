@@ -20,7 +20,7 @@ const seedFromMovie = require('../tasks/seed-from-movie')
 module.exports = function (movieId, callback) {
   return (dispatch, getState) => {
     const { seeding, username, command } = getState()
-    console.log('seedCheck', movieId)
+    console.log('seedCheck', {seeding, movieId, callback})
     let movie
     
     pull(

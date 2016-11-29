@@ -5,6 +5,8 @@ const get = require('../data/get')
 const getMoviesJoined = require('../data/get-movies-joined')
 const getRandomUnknown = require('../data/get-random-unknown')
 
+// modules
+const extend = require('xtend')
 // action-creators
 const update = require('./update')
 const seedCheck = require('./seed-check')
@@ -26,6 +28,7 @@ const asyncMap = require('pull-stream/throughs/async-map')
 const filterNot = require('pull-stream/throughs/filter-not')
 const filter = require('pull-stream/throughs/filter')
 const flatten = require('pull-stream/throughs/flatten')
+const paramap = require('pull-paramap')
 const map = require('pull-stream/throughs/map')
 const collect = require('pull-stream/sinks/collect')
 const drain = require('pull-stream/sinks/drain')
@@ -45,13 +48,17 @@ function predictSequence () {
   return (dispatch, getState) => {
     const { username, command } = getState()
     const notWatched = []
-    const scoreMap = {}
+    let scoreMap = {}
 
     pull(
       once(1),
       asyncMap((n, cb) => dispatch(predict(cb))),
       map((predictions) => {
         return predictions.map((prediction) => {
+          scoreMap = extend(
+            scoreMap, 
+            { [prediction.movieId]: prediction.score }
+          )
           return parseInt(prediction.movieId)
         })
       }),
@@ -63,14 +70,43 @@ function predictSequence () {
       }),
       filter((movie) => movie.watched == null),
       collect((err, unknownMovies) => {
-        
-        command.prompt(confirmWatched(unknownMovies), (answer) => {
-            console.log(answer)
-        })
-         
+        console.log({unknownMovies, scoreMap})
+        if (unknownMovies.length > 0) {
+          confirmSequence(command, unknownMovies, (err, updates) => {
+            console.log({updates, scoreMap})
+
+
+          })
+        }
+
       })
     )
   }
+}
+
+function addToMap (scoreMap, predictions) {
+  predictions.forEach((prediction) => {
+    console.log(prediction)
+    scoreMap = extend(scoreMap, { [prediction.movieId]: prediction.score })
+  })
+
+  return scoreMap
+}
+
+function confirmSequence (command, unknownMovies, callback) {
+  pull(
+    once(unknownMovies),
+    asyncMap((unknownMovies, cb) => {
+      command.prompt(confirmWatched(unknownMovies), (answer) => {
+        cb(null, answer.watched)
+      })
+    }),
+    flatten(),
+    paramap((movieId, cb) => {
+      seen({ username, movieId, watched: true }, cb)
+    }),
+    collect(callback)
+  )
 }
 
 function recurseSeen (movieIds, index, callback) {
@@ -78,16 +114,16 @@ function recurseSeen (movieIds, index, callback) {
     pull(
       once(movieIds[index]),
       asyncMap((id, cb) => get('movies', { id }, cb)),
-      asyncMap((movie, cb) => dispatch(haveYouSeen(movie, cb))),
-      map((update) => {
+        asyncMap((movie, cb) => dispatch(haveYouSeen(movie, cb))),
+        map((update) => {
         const { watched } = update
         if (watched) dispatch(recurseSeen(movieIds, index++, callback))
-        else return update
+          else return update
       }),
-      filter((update) => update),
-      drain((update) => {
-        callback(null, update)
-      })
+  filter((update) => update),
+    drain((update) => {
+    callback(null, update)
+  })
     )    
   }
 }
@@ -100,12 +136,12 @@ function learn () {
       once(username),
       asyncMap(getRandomUnknown),
       asyncMap((movie, cb) => dispatch(haveYouSeen(movie, cb))),
-      map(({ watched, movieId }) => {
+        map(({ watched, movieId }) => {
         if (watched) dispatch(preferSequence({ movieAId: movieId }))
         return watched
       }),
       filterNot((watched) => watched),
-      drain(() => dispatch(randomPrompt()))
+        drain(() => dispatch(randomPrompt()))
     )
   }
 }
@@ -117,7 +153,7 @@ function preferSequence (options={}) {
       if (err) console.log({err})
       console.log({winnerId})
       dispatch(randomPrompt())
-      dispatch(seedCheck(winnerId))
+      dispatch(seedCheck(winnerId, noop))
     }))
   }
 }
@@ -174,4 +210,6 @@ function newUser (username) {
     )
   }
 }
+
+function noop () {}
 
