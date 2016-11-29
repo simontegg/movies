@@ -5,9 +5,11 @@ const vorpal = require('vorpal')()
 const { getState, subscribe, dispatch } = require('./store')
 const Actions = require('./action-creators')
 const { 
+  predictSequence,
   learn,
   login, 
   haveYouSeen,
+  recurseSeen,
   predict } = require('./action-creators')
 
 const toPairs = require('lodash.topairs')
@@ -35,9 +37,7 @@ vorpal
 vorpal
   .command('predict', 'movie-bot tries to predict movies that you will like but have not seen')
   .action(function (args, callback) {
-
-    dispatch(predict())
-
+    dispatch(predictSequence())
   })
 
 vorpal

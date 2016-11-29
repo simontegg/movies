@@ -21,6 +21,7 @@ function haveYouSeen (movie, callback) {
     pull(
       once(movie),
       asyncMap((movie, cb) => {
+        console.log({movie})
         command.prompt(seenMovie(movie), ({response}) => {
           cb(null, mapResponseToUpdate(username, response, movie.id))
         })

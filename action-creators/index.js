@@ -1,6 +1,8 @@
 // db
 const insert = require('../data/insert')
 const exists = require('../data/exists')
+const get = require('../data/get')
+const getMoviesJoined = require('../data/get-movies-joined')
 const getRandomUnknown = require('../data/get-random-unknown')
 
 // action-creators
@@ -18,20 +20,72 @@ const seedFromMovie = require('../tasks/seed-from-movie')
 const pull = require('pull-stream')
 const once = require('pull-stream/sources/once')
 const asyncMap = require('pull-stream/throughs/async-map')
-const map = require('pull-stream/throughs/map')
 const filterNot = require('pull-stream/throughs/filter-not')
-const onEnd = require('pull-stream/sinks/on-end')
+const filter = require('pull-stream/throughs/filter')
+const flatten = require('pull-stream/throughs/flatten')
+const map = require('pull-stream/throughs/map')
+const collect = require('pull-stream/sinks/collect')
 const drain = require('pull-stream/sinks/drain')
+const onEnd = require('pull-stream/sinks/on-end')
 
 const shuffle = require('lodash.shuffle')
-
-
 
 module.exports = {
   login,
   haveYouSeen,
-  predict,
-  learn
+  learn,
+  recurseSeen,
+  predictSequence
+}
+
+function predictSequence () {
+  return (dispatch, getState) => {
+    const { username, command } = getState()
+    const watched = []
+
+    pull(
+      once(1),
+      asyncMap((n, cb) => dispatch(predict(cb))),
+      map((predictions) => {
+        return predictions.map((prediction) => {
+          return parseInt(prediction.movieId)
+        })
+      }),
+      asyncMap((movieIds, cb) => getMoviesJoined(username, movieIds, cb)),
+      map(m => {
+        console.log({m})
+        return m
+      }),
+      flatten(),
+      map((movie) => {
+        if (movie.watched != null) watched.push(movie)
+        return movie
+      }),
+      filter((movie) => movie.watched == null),
+      collect((err, movies) => {
+        console.log({watched, movies})
+      })
+    )
+  }
+}
+
+function recurseSeen (movieIds, index, callback) {
+  return (dispatch) => {
+    pull(
+      once(movieIds[index]),
+      asyncMap((id, cb) => get('movies', { id }, cb)),
+      asyncMap((movie, cb) => dispatch(haveYouSeen(movie, cb))),
+      map((update) => {
+        const { watched } = update
+        if (watched) dispatch(recurseSeen(movieIds, index++, callback))
+        else return update
+      }),
+      filter((update) => update),
+      drain((update) => {
+        callback(null, update)
+      })
+    )    
+  }
 }
 
 function learn () {
@@ -43,7 +97,6 @@ function learn () {
       asyncMap(getRandomUnknown),
       asyncMap((movie, cb) => dispatch(haveYouSeen(movie, cb))),
       map(({ watched, movieId }) => {
-
         if (watched) dispatch(preferSequence({ movieAId: movieId }))
         return watched
       }),

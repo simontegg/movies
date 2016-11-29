@@ -21,6 +21,7 @@ module.exports = function (movieId, callback) {
   return (dispatch, getState) => {
     const { seeding, username, command } = getState()
     console.log('seedCheck', movieId)
+    let movie
     
     pull(
       once(seeding),
@@ -29,9 +30,10 @@ module.exports = function (movieId, callback) {
         get('movies', { id: movieId }, cb) 
       }),
       filter((movie) => !movie.seed),
-      asyncMap((notSeed, cb) => getEloStats(username, cb)),
-      filter(({eloCount}) => eloCount > 10),
-      asyncMap(({eloMax}, cb) => {
+//      asyncMap((notSeed, cb) => getEloStats(username, cb)),
+//      filter(({eloCount}) => eloCount > 10),
+      asyncMap((m, cb) => {
+        movie = m
         getElo(username, movieId, (err, movieElo) => {
           if (movieElo > ELO_INITIAL) cb(null, true)
           else cb(null, false)
@@ -40,7 +42,7 @@ module.exports = function (movieId, callback) {
       filter((shouldSeed) => shouldSeed),
       asyncMap((shouldSeed, cb) => {
         dispatch(update('seeding', true))
-        command.log('seeding movies')
+        command.log('seeding movies from ', movie.title)
         seedFromMovie(movieId, cb)
       }),
       drain((mId) => {

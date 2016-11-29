@@ -16,6 +16,18 @@ const seen = {
   choices: ['yes', 'no']
 }
 
+const predictQ = {
+  type: 'checkbox',
+}
+
+function predictions (predictedMovies) {
+  return {
+    message: 'Select the movies you have seen already',
+    type: 'checkbox',
+    choices: predictedMovies.map(makeChoice)
+  }
+}
+
 function confirmMovie (results) {
   const choices = results.map((result) => ({
     name: `${result.title} ${result.release_date.slice(0, 4)}`,

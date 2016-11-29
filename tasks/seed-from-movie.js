@@ -31,7 +31,7 @@ const concat = require('lodash.concat')
 const includes = require('lodash.includes')
 const some = require('lodash.some')
 
-module.exports = function (username, movieId, callback) {
+module.exports = function (movieId, callback) {
   
   pull(
     once(movieId),

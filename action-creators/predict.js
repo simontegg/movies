@@ -37,7 +37,7 @@ const updateUserMovieStats = require('../tasks/update-user-movie-stats')
 
 module.exports = predict
 
-function predict () {
+function predict (callback) {
   return (dispatch, getState) => {
     const { username } = getState()
     pull(
@@ -47,13 +47,12 @@ function predict () {
         getClassifierAndPredict(username, cb)
       }),
       drain(({classifier, predictObject}) => {
+       // console.log(Object.keys(predictObject))
         pull(
           values(classifyMovies(classifier, predictObject)),
           sort((a, b) => b.score - a.score),
           take(10),
-          collect((err, results) => {
-            console.log('movies', results)
-          })
+          collect(callback)
         )
       })
     )
@@ -120,7 +119,7 @@ function getPredictObject (username, callback) {
   pull(
     once(username),
     asyncMap((username, cb) => {
-      predictSet({ username }, cb)
+      predictSet(username, cb)
     }),
     flatten(),
     reduce(
@@ -135,6 +134,7 @@ function classifyMovies (classifier, predictObject) {
   return Object.keys(predictObject).map((key) => {
     const movie = predictObject[key]
     delete movie.output
+   // console.log(getTrueScore(classifier.classify(movie, 0, true)))
     return {
       movieId: key,
       score: getTrueScore(classifier.classify(movie, 0, true))
