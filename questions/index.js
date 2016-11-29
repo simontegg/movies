@@ -16,15 +16,12 @@ const seen = {
   choices: ['yes', 'no']
 }
 
-const predictQ = {
-  type: 'checkbox',
-}
-
-function predictions (predictedMovies) {
+function confirmWatched (unknownMovies) {
   return {
-    message: 'Select the movies you have seen already',
+    name: 'watched',
+    message: 'Have you seen these movies? (check if you have)',
     type: 'checkbox',
-    choices: predictedMovies.map(makeChoice)
+    choices: unknownMovies.map(makeChoice)
   }
 }
 
@@ -58,6 +55,7 @@ function makeChoice (movie) {
 }
 
 module.exports = {
+  confirmWatched,
   favourite,
   confirmMovie,
   seenMovie,

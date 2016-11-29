@@ -12,6 +12,9 @@ const haveYouSeen = require('./have-you-seen')
 const predict = require('./predict')
 const prefer = require('./prefer')
 
+// questions
+const { confirmWatched } = require('../questions')
+
 // tasks
 const favouriteMovie = require('../tasks/favourite-movie')
 const seedFromMovie = require('../tasks/seed-from-movie')
@@ -41,7 +44,8 @@ module.exports = {
 function predictSequence () {
   return (dispatch, getState) => {
     const { username, command } = getState()
-    const watched = []
+    const notWatched = []
+    const scoreMap = {}
 
     pull(
       once(1),
@@ -52,18 +56,18 @@ function predictSequence () {
         })
       }),
       asyncMap((movieIds, cb) => getMoviesJoined(username, movieIds, cb)),
-      map(m => {
-        console.log({m})
-        return m
-      }),
       flatten(),
       map((movie) => {
-        if (movie.watched != null) watched.push(movie)
+        if (movie.watched != null) notWatched.push(movie)
         return movie
       }),
       filter((movie) => movie.watched == null),
-      collect((err, movies) => {
-        console.log({watched, movies})
+      collect((err, unknownMovies) => {
+        
+        command.prompt(confirmWatched(unknownMovies), (answer) => {
+            console.log(answer)
+        })
+         
       })
     )
   }
