@@ -4,6 +4,7 @@ const exists = require('../data/exists')
 const get = require('../data/get')
 const getMoviesJoined = require('../data/get-movies-joined')
 const getRandomUnknown = require('../data/get-random-unknown')
+const seen = require('../data/seen')
 
 // modules
 const extend = require('xtend')
@@ -16,6 +17,7 @@ const prefer = require('./prefer')
 
 // questions
 const { confirmWatched } = require('../questions')
+const { yourPredictions } = require('../messages')
 
 // tasks
 const favouriteMovie = require('../tasks/favourite-movie')
@@ -34,97 +36,91 @@ const collect = require('pull-stream/sinks/collect')
 const drain = require('pull-stream/sinks/drain')
 const onEnd = require('pull-stream/sinks/on-end')
 
+// modules
 const shuffle = require('lodash.shuffle')
+const reduce = require('lodash.reduce')
+const includes = require('lodash.includes')
+const pluck = require('lodash.pluck')
+const _ = require('lodash')
 
 module.exports = {
   login,
   haveYouSeen,
   learn,
-  recurseSeen,
   predictSequence
 }
 
 function predictSequence () {
   return (dispatch, getState) => {
     const { username, command } = getState()
-    const notWatched = []
-    let scoreMap = {}
+    let movieMap = {}
 
     pull(
       once(1),
       asyncMap((n, cb) => dispatch(predict(cb))),
       map((predictions) => {
-        return predictions.map((prediction) => {
-          scoreMap = extend(
-            scoreMap, 
-            { [prediction.movieId]: prediction.score }
-          )
-          return parseInt(prediction.movieId)
+        return predictions.map(({movieId, score}) => {
+     //     movieMap = extend(movieMap, { [movieId]: { score } })
+          return parseInt(movieId)
         })
       }),
       asyncMap((movieIds, cb) => getMoviesJoined(username, movieIds, cb)),
       flatten(),
       map((movie) => {
-        if (movie.watched != null) notWatched.push(movie)
+        movieMap[movie.id] = movie
         return movie
       }),
       filter((movie) => movie.watched == null),
       collect((err, unknownMovies) => {
-        console.log({unknownMovies, scoreMap})
-        if (unknownMovies.length > 0) {
-          confirmSequence(command, unknownMovies, (err, updates) => {
-            console.log({updates, scoreMap})
 
-
+        pull(
+          once(unknownMovies),
+          filter((unknownMovies) => unknownMovies.length > 0),
+          asyncMap((unknownMovies, cb) => { 
+            dispatch(confirmSequence(unknownMovies, cb))
+          }),
+          flatten(),
+          map(({watched, movieId}) => {
+            if (watched) delete movieMap[movieId]
+          }),
+          onEnd(() => {
+            command.log(yourPredictions(_.map(movieMap))) 
           })
-        }
-
+        )
       })
     )
   }
 }
 
-function addToMap (scoreMap, predictions) {
-  predictions.forEach((prediction) => {
-    console.log(prediction)
-    scoreMap = extend(scoreMap, { [prediction.movieId]: prediction.score })
-  })
+function confirmSequence (unknownMovies, callback) {
+  return (dispatch, getState) => {
+    const { command, username } = getState()
 
-  return scoreMap
-}
-
-function confirmSequence (command, unknownMovies, callback) {
-  pull(
-    once(unknownMovies),
-    asyncMap((unknownMovies, cb) => {
-      command.prompt(confirmWatched(unknownMovies), (answer) => {
-        cb(null, answer.watched)
-      })
-    }),
-    flatten(),
-    paramap((movieId, cb) => {
-      seen({ username, movieId, watched: true }, cb)
-    }),
-    collect(callback)
-  )
-}
-
-function recurseSeen (movieIds, index, callback) {
-  return (dispatch) => {
     pull(
-      once(movieIds[index]),
-      asyncMap((id, cb) => get('movies', { id }, cb)),
-        asyncMap((movie, cb) => dispatch(haveYouSeen(movie, cb))),
-        map((update) => {
-        const { watched } = update
-        if (watched) dispatch(recurseSeen(movieIds, index++, callback))
-          else return update
+      once(unknownMovies),
+      asyncMap((unknownMovies, cb) => {
+        command.prompt(confirmWatched(unknownMovies), ({watched}) => {
+          cb(
+            null, 
+            reduce(
+              unknownMovies, 
+              (memo, movie) => {
+                memo.push({ 
+                  username, 
+                  movieId: movie.id,
+                  watched: (includes(watched, movie.id))
+                })
+                return memo
+              }, 
+              []
+            )
+          )
+        })
       }),
-  filter((update) => update),
-    drain((update) => {
-    callback(null, update)
-  })
-    )    
+      flatten(),
+      paramap(seen),
+      collect(callback)
+    )
   }
 }
 
@@ -141,14 +137,13 @@ function learn () {
         return watched
       }),
       filterNot((watched) => watched),
-        drain(() => dispatch(randomPrompt()))
+      drain(() => dispatch(randomPrompt()))
     )
   }
 }
 
 function preferSequence (options={}) {
   return (dispatch) => {
-    console.log('preferSequence', {options})
     dispatch(prefer(options, (err, winnerId) => {
       if (err) console.log({err})
       console.log({winnerId})

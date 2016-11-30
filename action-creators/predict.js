@@ -64,12 +64,11 @@ function getClassifierAndPredict (username, callback) {
   let results = {}
 
   function done (err, result) {
-    console.log('done', Object.keys(result))
     if (err) {
       callback(err)
     } else {
       doneCount++
-        results = extend(results, result)
+      results = extend(results, result)
       if (doneCount === 2) callback(null, results)
     }
   }
