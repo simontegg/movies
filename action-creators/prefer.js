@@ -37,7 +37,7 @@ function prefer (options, callback) {
       asyncMap((options, cb) => {
         if (!movieAId && !movieBId) {
           getRandomWatched(username, (err, movie) => {
-            if (err) cb(err)
+            if (err) return cb(err)
             cb(null, false)
             dispatch(prefer(
               extend(options, { movieAId: movie.id }), 
@@ -45,14 +45,14 @@ function prefer (options, callback) {
             ))
           })
         } else {
-          cb(null, options)
+          return cb(null, options)
         }
       }),
       filter((options) => options),
       asyncMap((options, cb) => {
         if (movieAId && !movieBId) {
           getPair(options, (err, movieBId) => {
-            if (err) cb(err)
+            if (err) return cb(err)
             cb(null, false)
             dispatch(prefer(extend(options, { movieBId }), callback))
           })

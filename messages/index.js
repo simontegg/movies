@@ -11,15 +11,16 @@ module.exports = {
 
 function yourPredictions (movies) {
   return `Movie Bot predicts that you will like the following movies: \n
-  ${movies.map(formatMovie)}`
+  ${movies.map(formatMovie).join('\n')}`
 }
 
 function formatMovie (movie) {
-  return `${movie.title} (${movie.year}) - ${movie.genres.map(formatGenre)} \n`
+
+  return ` * ${movie.title} (${movie.year}) - ${movie.genres.map(formatGenre).join(', ')}`
 }
 
 function formatGenre (genre) {
-  return `${genre} `
+  return `${genre}`
 }
 
 

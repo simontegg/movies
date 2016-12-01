@@ -10,7 +10,9 @@ const seen = require('../data/seen')
 const extend = require('xtend')
 // action-creators
 const update = require('./update')
+const ora = require('ora')
 const seedCheck = require('./seed-check')
+const spinners = require('cli-spinners')
 const haveYouSeen = require('./have-you-seen')
 const predict = require('./predict')
 const prefer = require('./prefer')
@@ -52,8 +54,10 @@ module.exports = {
 
 function predictSequence () {
   return (dispatch, getState) => {
-    const { username, command } = getState()
+    const { username, command, callback } = getState()
     let movieMap = {}
+
+    const spinner = ora({ spinner: 'hamburger' }).start()
 
     pull(
       once(1),
@@ -77,6 +81,7 @@ function predictSequence () {
           once(unknownMovies),
           filter((unknownMovies) => unknownMovies.length > 0),
           asyncMap((unknownMovies, cb) => { 
+            spinner.stop()
             dispatch(confirmSequence(unknownMovies, cb))
           }),
           flatten(),
@@ -84,7 +89,9 @@ function predictSequence () {
             if (watched) delete movieMap[movieId]
           }),
           onEnd(() => {
+            spinner.stop()
             command.log(yourPredictions(_.map(movieMap))) 
+            callback()
           })
         )
       })
@@ -146,7 +153,6 @@ function preferSequence (options={}) {
   return (dispatch) => {
     dispatch(prefer(options, (err, winnerId) => {
       if (err) console.log({err})
-      console.log({winnerId})
       dispatch(randomPrompt())
       dispatch(seedCheck(winnerId, noop))
     }))
@@ -174,13 +180,13 @@ function checkNewUser (username) {
     const { callback } = getState()
 
     exists('users', { username }, (err, userExists) => {
-      if (err) callback(err)
-        if (userExists) {
-          dispatch(update('message', `welcome ${username}`))
-          callback()
-        } else {
-          dispatch(newUser(username))
-        }
+      if (err) return callback(err)
+      if (userExists) {
+        dispatch(update('message', `welcome ${username}`))
+        callback()
+      } else {
+        dispatch(newUser(username))
+      }
     })
   }
 }
@@ -191,15 +197,15 @@ function newUser (username) {
     pull(
       once(username),
       asyncMap((x, cb) => insert('users', { username }, cb)),
-        asyncMap((x, cb) => favouriteMovie(command, username, cb)),
-        asyncMap((movieId, cb) => {
+      asyncMap((x, cb) => favouriteMovie(command, username, cb)),
+      asyncMap((movieId, cb) => {
         dispatch(update('seeding', true)) 
         command.log('seeding database with related movies')
         seedFromMovie(movieId, cb)
       }),
       onEnd(() => {
         dispatch(update('seeding', false))
-        command.log('finished seeding', callback)
+        command.log('finished seeding')
         callback()
       })
     )

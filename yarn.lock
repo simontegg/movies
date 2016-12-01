@@ -162,6 +162,14 @@ cli-cursor@^1.0.1, cli-cursor@^1.0.2:
   dependencies:
     restore-cursor "^1.0.1"
 
+cli-spinners:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/cli-spinners/-/cli-spinners-0.3.0.tgz#d822cc65116aa70ae7f6d2a826eda845fc0e4ef1"
+
+cli-spinners@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/cli-spinners/-/cli-spinners-0.2.0.tgz#85078737913b880f6ec9ffe7b65e83ec7776284f"
+
 cli-width@^1.0.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/cli-width/-/cli-width-1.1.1.tgz#a4d293ef67ebb7b88d4a4d42c0ccf00c4d1e366d"
@@ -961,6 +969,12 @@ lodash@^4.14.0, lodash@^4.2.1, lodash@^4.3.0, lodash@^4.5.1, lodash@^4.6.0:
   version "4.17.2"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.2.tgz#34a3055babe04ce42467b607d700072c7ff6bf42"
 
+log-symbols@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/log-symbols/-/log-symbols-1.0.2.tgz#376ff7b58ea3086a0f09facc74617eca501e1a18"
+  dependencies:
+    chalk "^1.0.0"
+
 log-update@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/log-update/-/log-update-1.0.2.tgz#19929f64c4093d2d2e7075a1dad8af59c296b8d1"
@@ -1153,6 +1167,15 @@ once@~1.3.3:
 onetime@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/onetime/-/onetime-1.1.0.tgz#a1f7838f8314c516f05ecefcbc4ccfe04b4ed789"
+
+ora:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/ora/-/ora-0.3.0.tgz#367a078ad25cfb096da501115eb5b401e07d7495"
+  dependencies:
+    chalk "^1.1.1"
+    cli-cursor "^1.0.2"
+    cli-spinners "^0.2.0"
+    log-symbols "^1.0.2"
 
 os-homedir@^1.0.0, os-homedir@^1.0.1:
   version "1.0.2"
